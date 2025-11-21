@@ -1,12 +1,10 @@
-package com.example.itsec_test.sort.service;
+package com.example.itsec_test.sort.service.strategy;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.stereotype.Service;
-
-@Service
-public class BubbleSortService {
+public class BubbleSort implements SortStrategy {
+    @Override
     public List<Integer> sort(List<Integer> numbers) {
         List<Integer> result = new ArrayList<Integer>(numbers);
         int n = result.size();

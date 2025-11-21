@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.itsec_test.sort.dto.SortRequest;
 import com.example.itsec_test.sort.dto.SortResponse;
-import com.example.itsec_test.sort.service.BubbleSortService;
+import com.example.itsec_test.sort.service.SortService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -18,15 +18,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequestMapping("api/v1/sort")
 @Tag(name = "Sort")
 public class SortController {
-    private final BubbleSortService bubbleSortService;
+    private final SortService sortService;
 
-    public SortController(BubbleSortService bubbleSortService) {
-        this.bubbleSortService = bubbleSortService;
+    public SortController(SortService sortService) {
+        this.sortService = sortService;
     }
 
-    @PostMapping("bubble")
-    public SortResponse bubbleSort(@RequestBody SortRequest request) {
-        List<Integer> result = this.bubbleSortService.sort(request.getNumbers());
+    @PostMapping()
+    public SortResponse sort(@RequestBody SortRequest request) {
+        List<Integer> result = this.sortService.sort(request);
 
         return SortResponse.builder()
                 .numbers(result)
