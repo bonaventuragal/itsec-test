@@ -7,6 +7,7 @@ import com.example.itsec_test.sort.dto.SortResponse;
 import com.example.itsec_test.sort.service.SortService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -25,7 +26,7 @@ public class SortController {
     }
 
     @PostMapping()
-    public SortResponse sort(@RequestBody SortRequest request) {
+    public SortResponse sort(@Valid @RequestBody SortRequest request) {
         List<Integer> result = this.sortService.sort(request);
 
         return SortResponse.builder()
