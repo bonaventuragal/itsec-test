@@ -1,0 +1,2 @@
+ALTER TABLE auth_otp
+ADD COLUMN purpose VARCHAR(50);
