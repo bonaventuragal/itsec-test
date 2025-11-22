@@ -3,6 +3,9 @@ package com.example.itsec_test.sort.service.strategy;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
+@Service
 public class SelectionSort implements SortStrategy {
     @Override
     public List<Integer> sort(List<Integer> numbers) {

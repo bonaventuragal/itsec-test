@@ -15,21 +15,18 @@ import com.example.itsec_test.sort.service.strategy.SortStrategy;
 
 @Service
 public class SortService {
-    private static final Map<SortType, SortStrategy> STRATEGY_MAP = new HashMap<>();
+    private final Map<SortType, SortStrategy> strategyMap = new HashMap<>();
 
-    public SortService() {
-        STRATEGY_MAP.put(SortType.BUBBLE, new BubbleSort());
-        STRATEGY_MAP.put(SortType.MERGE, new MergeSort());
-        STRATEGY_MAP.put(SortType.SELECTION, new SelectionSort());
+    public SortService(BubbleSort bubbleSort, MergeSort mergeSort, SelectionSort selectionSort) {
+        strategyMap.put(SortType.BUBBLE, bubbleSort);
+        strategyMap.put(SortType.MERGE, mergeSort);
+        strategyMap.put(SortType.SELECTION, selectionSort);
     }
 
     public List<Integer> sort(SortRequest request) {
         List<Integer> numbers = request.getNumbers();
         SortType sortType = request.getSortType();
-        SortStrategy sortStrategy = STRATEGY_MAP.get(sortType);
-
-        List<Integer> result = sortStrategy.sort(numbers);
-        
-        return result;
+        SortStrategy sortStrategy = strategyMap.get(sortType);
+        return sortStrategy.sort(numbers);
     }
 }
