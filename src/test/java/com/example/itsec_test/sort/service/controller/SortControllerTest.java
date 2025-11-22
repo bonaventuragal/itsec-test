@@ -3,7 +3,6 @@ package com.example.itsec_test.sort.service.controller;
 import com.example.itsec_test.sort.constant.SortType;
 import com.example.itsec_test.sort.controller.SortController;
 import com.example.itsec_test.sort.dto.SortRequest;
-import com.example.itsec_test.sort.dto.SortResponse;
 import com.example.itsec_test.sort.service.SortService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;

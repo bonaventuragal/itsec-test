@@ -5,7 +5,6 @@ import com.example.itsec_test.sort.dto.SortRequest;
 import com.example.itsec_test.sort.service.strategy.BubbleSort;
 import com.example.itsec_test.sort.service.strategy.MergeSort;
 import com.example.itsec_test.sort.service.strategy.SelectionSort;
-import com.example.itsec_test.sort.service.strategy.SortStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
