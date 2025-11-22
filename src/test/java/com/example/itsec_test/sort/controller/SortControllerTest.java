@@ -1,7 +1,6 @@
-package com.example.itsec_test.sort.service.controller;
+package com.example.itsec_test.sort.controller;
 
 import com.example.itsec_test.sort.constant.SortType;
-import com.example.itsec_test.sort.controller.SortController;
 import com.example.itsec_test.sort.dto.SortRequest;
 import com.example.itsec_test.sort.service.SortService;
 import org.junit.jupiter.api.Test;
