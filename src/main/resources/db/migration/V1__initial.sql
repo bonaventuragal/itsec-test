@@ -31,7 +31,6 @@ CREATE TABLE audit_log (
     user_id INT,
     created_at TIMESTAMPTZ NOT NULL,
     deleted_at TIMESTAMPTZ,
-    updated_at TIMESTAMPTZ,
     CONSTRAINT fk_auditlog_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
@@ -43,7 +42,6 @@ CREATE TABLE auth_token (
     user_id INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     deleted_at TIMESTAMPTZ,
-    updated_at TIMESTAMPTZ,
     CONSTRAINT fk_authtoken_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
@@ -55,6 +53,5 @@ CREATE TABLE auth_otp (
     user_id INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     deleted_at TIMESTAMPTZ,
-    updated_at TIMESTAMPTZ,
     CONSTRAINT fk_authotp_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
