@@ -32,6 +32,9 @@ public class User extends BaseMutableModel {
     @Column(nullable = false)
     private UserRole role;
 
+    @Column(nullable = false)
+    private Boolean isVerified = false;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<AuditLog> auditLogs;
 
