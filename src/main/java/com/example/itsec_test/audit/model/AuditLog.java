@@ -28,12 +28,6 @@ public class AuditLog extends BaseModel {
     private String path;
 
     @Column(nullable = true)
-    private String requestParams;
-
-    @Column(nullable = true)
-    private String requestBody;
-
-    @Column(nullable = true)
     private String clientIp;
 
     @Column(nullable = true)

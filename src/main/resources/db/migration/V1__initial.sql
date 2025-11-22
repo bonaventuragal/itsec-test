@@ -25,8 +25,6 @@ CREATE TABLE audit_log (
     id SERIAL PRIMARY KEY,
     method VARCHAR(255) NOT NULL,
     path VARCHAR(255) NOT NULL,
-    request_params TEXT,
-    request_body TEXT,
     client_ip VARCHAR(255),
     user_agent VARCHAR(255),
     timestamp TIMESTAMPTZ NOT NULL,
