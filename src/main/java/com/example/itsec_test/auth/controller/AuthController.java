@@ -6,7 +6,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.itsec_test.auth.dto.RegisterRequest;
+import com.example.itsec_test.auth.dto.ValidateOtpRequest;
+import com.example.itsec_test.auth.dto.ValidateOtpResponse;
+import com.example.itsec_test.auth.dto.LoginRequest;
 import com.example.itsec_test.auth.service.AuthService;
+import com.example.itsec_test.common.dto.MessageResponse;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -22,7 +26,25 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public void register(@Valid @RequestBody RegisterRequest request) {
-        authService.register(request);
+    public MessageResponse register(@Valid @RequestBody RegisterRequest request) {
+        this.authService.register(request);
+        return MessageResponse.builder()
+                .message("Registration successful. Please check your email for completing the registration.")
+                .build();
+    }
+
+    @PostMapping("/login")
+    public MessageResponse login(@Valid @RequestBody LoginRequest request) {
+        this.authService.login(request);
+        return MessageResponse.builder()
+                .message("Please check your email to complete login.")
+                .build();
+    }
+    @PostMapping("/validate-otp")
+    public ValidateOtpResponse validateOtp(@Valid @RequestBody ValidateOtpRequest request) {
+        String token = this.authService.verifyOtp(request);
+        return ValidateOtpResponse.builder()
+                .token(token)
+                .build();
     }
 }

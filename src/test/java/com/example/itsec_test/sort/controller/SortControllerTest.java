@@ -1,12 +1,15 @@
 package com.example.itsec_test.sort.controller;
 
+import com.example.itsec_test.audit.RequestLoggingFilter;
 import com.example.itsec_test.sort.constant.SortType;
 import com.example.itsec_test.sort.dto.SortRequest;
 import com.example.itsec_test.sort.service.SortService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -17,10 +20,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.Arrays;
 
 @WebMvcTest(SortController.class)
+@AutoConfigureMockMvc(addFilters = false)
+@ActiveProfiles("test")
 class SortControllerTest {
 
 	@Autowired
 	private MockMvc mockMvc;
+
+    @MockitoBean
+    private RequestLoggingFilter requestLoggingFilter;
 
 	@MockitoBean
 	private SortService sortService;

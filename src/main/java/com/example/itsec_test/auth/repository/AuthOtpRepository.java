@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.itsec_test.auth.model.AuthOtp;
 
-public interface AuthOtpRepository extends JpaRepository<AuthOtp, Integer> {
+import java.util.Optional;
 
+public interface AuthOtpRepository extends JpaRepository<AuthOtp, Integer> {
+	Optional<AuthOtp> findByOtp(String otp);
 }
