@@ -1,6 +1,7 @@
 package com.example.itsec_test.sort.controller;
 
-import com.example.itsec_test.audit.RequestLoggingFilter;
+import com.example.itsec_test.audit.filter.RequestLoggingFilter;
+import com.example.itsec_test.auth.filter.JwtUserFilter;
 import com.example.itsec_test.sort.constant.SortType;
 import com.example.itsec_test.sort.dto.SortRequest;
 import com.example.itsec_test.sort.service.SortService;
@@ -29,6 +30,9 @@ class SortControllerTest {
 
     @MockitoBean
     private RequestLoggingFilter requestLoggingFilter;
+
+    @MockitoBean
+    private JwtUserFilter jwtUserFilter;
 
 	@MockitoBean
 	private SortService sortService;

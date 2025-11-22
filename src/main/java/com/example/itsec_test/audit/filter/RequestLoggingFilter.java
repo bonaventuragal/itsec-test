@@ -1,4 +1,4 @@
-package com.example.itsec_test.audit;
+package com.example.itsec_test.audit.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

@@ -1,10 +1,11 @@
 package com.example.itsec_test.auth.controller;
 
 import com.example.itsec_test.auth.dto.RegisterRequest;
-import com.example.itsec_test.audit.RequestLoggingFilter;
+import com.example.itsec_test.audit.filter.RequestLoggingFilter;
 import com.example.itsec_test.auth.constant.UserRole;
 import com.example.itsec_test.auth.dto.LoginRequest;
 import com.example.itsec_test.auth.dto.ValidateOtpRequest;
+import com.example.itsec_test.auth.filter.JwtUserFilter;
 import com.example.itsec_test.auth.service.AuthService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private RequestLoggingFilter requestLoggingFilter;
+
+    @MockitoBean
+    private JwtUserFilter jwtUserFilter;
 
     @MockitoBean
     private AuthService authService;

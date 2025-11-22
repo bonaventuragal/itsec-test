@@ -2,6 +2,7 @@ package com.example.itsec_test.auth.provider;
 
 import com.example.itsec_test.auth.model.User;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -40,5 +41,14 @@ public class JwtTokenProvider implements TokenProvider {
                 .setExpiration(expiryDate)
                 .signWith(this.key, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    @Override
+    public Claims parseClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(this.key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 }
