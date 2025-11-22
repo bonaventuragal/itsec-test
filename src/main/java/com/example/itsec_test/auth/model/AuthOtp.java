@@ -3,7 +3,6 @@ package com.example.itsec_test.auth.model;
 import java.time.LocalDateTime;
 
 import com.example.itsec_test.common.model.BaseModel;
-import com.example.itsec_test.user.model.User;
 
 import jakarta.persistence.*;
 import lombok.*;

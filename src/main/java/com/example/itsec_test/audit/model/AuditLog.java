@@ -2,8 +2,8 @@ package com.example.itsec_test.audit.model;
 
 import java.time.LocalDateTime;
 
+import com.example.itsec_test.auth.model.User;
 import com.example.itsec_test.common.model.BaseModel;
-import com.example.itsec_test.user.model.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

@@ -1,12 +1,10 @@
-package com.example.itsec_test.user.model;
+package com.example.itsec_test.auth.model;
 
 import java.util.List;
 
 import com.example.itsec_test.audit.model.AuditLog;
-import com.example.itsec_test.auth.model.AuthOtp;
-import com.example.itsec_test.auth.model.AuthToken;
+import com.example.itsec_test.auth.constant.UserRole;
 import com.example.itsec_test.common.model.BaseMutableModel;
-import com.example.itsec_test.user.constant.UserRole;
 
 import jakarta.persistence.*;
 import lombok.*;

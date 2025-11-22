@@ -1,7 +1,7 @@
 package com.example.itsec_test.article.model;
 
+import com.example.itsec_test.auth.model.User;
 import com.example.itsec_test.common.model.BaseMutableModel;
-import com.example.itsec_test.user.model.User;
 
 import lombok.*;
 import jakarta.persistence.*;
