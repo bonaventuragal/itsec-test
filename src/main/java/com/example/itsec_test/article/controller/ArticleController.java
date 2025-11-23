@@ -6,6 +6,7 @@ import com.example.itsec_test.article.dto.UpdateArticleRequest;
 import com.example.itsec_test.article.service.ArticleService;
 import com.example.itsec_test.auth.model.User;
 import com.example.itsec_test.common.exception.ForbiddenRequestException;
+import com.example.itsec_test.common.dto.MessageResponse;
 import com.example.itsec_test.common.dto.PaginationRequest;
 import com.example.itsec_test.common.dto.PaginationResponse;
 
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import jakarta.servlet.http.HttpServletRequest;
@@ -75,12 +77,27 @@ public class ArticleController {
 
     @PutMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'EDITOR', 'CONTRIBUTOR')")
-    public ArticleResponse updateArticle(@Valid @RequestBody UpdateArticleRequest request, HttpServletRequest httpRequest) {
+    public ArticleResponse updateArticle(@Valid @RequestBody UpdateArticleRequest request,
+            HttpServletRequest httpRequest) {
         User user = (User) httpRequest.getAttribute("user");
         if (user == null) {
             throw new ForbiddenRequestException("User not found in request");
         }
 
         return articleService.updateArticle(request, user);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'EDITOR', 'CONTRIBUTOR')")
+    public MessageResponse deleteArticle(@NonNull @PathVariable Integer id, HttpServletRequest httpRequest) {
+        User user = (User) httpRequest.getAttribute("user");
+        if (user == null) {
+            throw new ForbiddenRequestException("User not found in request");
+        }
+        articleService.deleteArticle(id, user);
+
+        return MessageResponse.builder()
+                .message("Article deleted successfully")
+                .build();
     }
 }

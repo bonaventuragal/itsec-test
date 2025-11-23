@@ -2,6 +2,8 @@ package com.example.itsec_test.auth.model;
 
 import java.util.List;
 
+import org.hibernate.annotations.SQLRestriction;
+
 import com.example.itsec_test.audit.model.AuditLog;
 import com.example.itsec_test.auth.constant.UserRole;
 import com.example.itsec_test.common.model.BaseMutableModel;
@@ -15,6 +17,7 @@ import lombok.*;
 @EqualsAndHashCode(callSuper = true, exclude = { "auditLogs", "authTokens", "authOtps" })
 @Entity
 @Table(name = "users")
+@SQLRestriction("deleted_at IS NULL")
 public class User extends BaseMutableModel {
     @Column(nullable = false)
     private String fullName;

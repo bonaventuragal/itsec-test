@@ -296,4 +296,78 @@ class ArticleServiceTest {
                 () -> articleService.updateArticle(request, user));
         verify(articleRepository, times(1)).findById(99);
     }
+
+    @SuppressWarnings("null")
+    @Test
+    void testDeleteArticleSuccessByAuthor() {
+        User author = new User();
+        author.setId(1);
+        author.setRole(UserRole.EDITOR);
+
+        Article article = new Article();
+        article.setId(1);
+        article.setAuthor(author);
+
+        when(articleRepository.findById(1)).thenReturn(Optional.of(article));
+        when(articleRepository.save(any(Article.class))).thenReturn(article);
+
+        articleService.deleteArticle(1, author);
+
+        verify(articleRepository, times(1)).findById(1);
+        verify(articleRepository, times(1)).save(any(Article.class));
+    }
+
+    @Test
+    void testDeleteArticleForbiddenForViewer() {
+        User viewer = new User();
+        viewer.setId(1);
+        viewer.setRole(UserRole.VIEWER);
+
+        assertThrows(ForbiddenRequestException.class,
+                () -> articleService.deleteArticle(1, viewer));
+    }
+
+    @Test
+    void testDeleteArticleForbiddenForContributor() {
+        User contributor = new User();
+        contributor.setId(1);
+        contributor.setRole(UserRole.CONTRIBUTOR);
+
+        assertThrows(ForbiddenRequestException.class,
+                () -> articleService.deleteArticle(1, contributor));
+    }
+
+    @Test
+    void testDeleteArticleForbiddenForNonAuthor() {
+        User author = new User();
+        author.setId(1);
+        author.setRole(UserRole.EDITOR);
+
+        User otherUser = new User();
+        otherUser.setId(2);
+        otherUser.setRole(UserRole.EDITOR);
+
+        Article article = new Article();
+        article.setId(1);
+        article.setAuthor(author);
+
+        when(articleRepository.findById(1)).thenReturn(Optional.of(article));
+
+        assertThrows(ForbiddenRequestException.class,
+                () -> articleService.deleteArticle(1, otherUser));
+        verify(articleRepository, times(1)).findById(1);
+    }
+
+    @Test
+    void testDeleteArticleNotFound() {
+        User user = new User();
+        user.setId(1);
+        user.setRole(UserRole.EDITOR);
+
+        when(articleRepository.findById(99)).thenReturn(Optional.empty());
+
+        assertThrows(BadRequestException.class,
+                () -> articleService.deleteArticle(99, user));
+        verify(articleRepository, times(1)).findById(99);
+    }
 }

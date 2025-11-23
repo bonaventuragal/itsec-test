@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -186,5 +187,19 @@ class ArticleControllerTest {
                 .andExpect(jsonPath("$.title").value(response.getTitle()))
                 .andExpect(jsonPath("$.content").value(response.getContent()))
                 .andExpect(jsonPath("$.published").value(response.isPublished()));
+    }
+
+    @Test
+    void testDeleteArticle() throws Exception {
+        User user = new User();
+        user.setId(1);
+        user.setFullName("User Name");
+
+        doNothing().when(articleService).deleteArticle(eq(1), any(User.class));
+
+        mockMvc.perform(delete("/api/v1/articles/1")
+                .requestAttr("user", user))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Article deleted successfully"));
     }
 }

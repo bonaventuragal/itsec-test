@@ -17,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.lang.NonNull;
@@ -36,13 +37,13 @@ public class ArticleService {
         article.setContent(request.getContent());
         article.setAuthor(user);
         article.setPublished(request.isPublished());
-        Article savedArticle = articleRepository.save(article);
+        Article savedArticle = this.articleRepository.save(article);
 
         return mapToResponse(savedArticle);
     }
 
     public ArticleResponse getArticleById(@NonNull Integer id, User user) {
-        Optional<Article> articleOpt = articleRepository.findById(id);
+        Optional<Article> articleOpt = this.articleRepository.findById(id);
         if (articleOpt.isEmpty()) {
             throw new BadRequestException("Article not found");
         }
@@ -62,9 +63,9 @@ public class ArticleService {
 
         Page<Article> page;
         if (user.getRole().equals(UserRole.VIEWER)) {
-            page = articleRepository.findByIsPublished(true, pageable);
+            page = this.articleRepository.findByIsPublished(true, pageable);
         } else {
-            page = articleRepository.findAll(pageable);
+            page = this.articleRepository.findAll(pageable);
         }
 
         return PaginationResponse.<ArticleResponse>builder()
@@ -95,7 +96,7 @@ public class ArticleService {
             throw new ForbiddenRequestException("You do not have permission to update articles");
         }
 
-        Optional<Article> articleOpt = articleRepository.findById(request.getId());
+        Optional<Article> articleOpt = this.articleRepository.findById(request.getId());
         if (articleOpt.isEmpty()) {
             throw new BadRequestException("Article not found");
         }
@@ -104,8 +105,7 @@ public class ArticleService {
         User author = article.getAuthor();
 
         if (!user.getRole().equals(UserRole.SUPER_ADMIN)) {
-            if (author != null && !author.getId().equals(user.getId())
-            ) {
+            if (!author.getId().equals(user.getId())) {
                 throw new ForbiddenRequestException("You do not have permission to update this article");
             }
         }
@@ -113,8 +113,31 @@ public class ArticleService {
         article.setTitle(request.getTitle());
         article.setContent(request.getContent());
         article.setPublished(request.isPublished());
-        Article updatedArticle = articleRepository.save(article);
+        Article updatedArticle = this.articleRepository.save(article);
 
         return mapToResponse(updatedArticle);
+    }
+
+    public void deleteArticle(@NonNull Integer id, User user) {
+        if (user.getRole().equals(UserRole.VIEWER) || user.getRole().equals(UserRole.CONTRIBUTOR)) {
+            throw new ForbiddenRequestException("You do not have permission to delete articles");
+        }
+
+        Optional<Article> articleOpt = this.articleRepository.findById(id);
+        if (articleOpt.isEmpty()) {
+            throw new BadRequestException("Article not found");
+        }
+
+        Article article = articleOpt.get();
+        User author = article.getAuthor();
+
+        if (!user.getRole().equals(UserRole.SUPER_ADMIN)) {
+            if (!author.getId().equals(user.getId())) {
+                throw new ForbiddenRequestException("You do not have permission to delete this article");
+            }
+        }
+
+        article.setDeletedAt(LocalDateTime.now());
+        this.articleRepository.save(article);
     }
 }
