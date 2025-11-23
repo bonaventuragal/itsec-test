@@ -5,13 +5,22 @@ import com.example.itsec_test.auth.dto.UpdateUserRequest;
 import com.example.itsec_test.auth.dto.UserResponse;
 import com.example.itsec_test.auth.model.User;
 import com.example.itsec_test.auth.repository.UserRepository;
+import com.example.itsec_test.common.dto.PaginationRequest;
+import com.example.itsec_test.common.dto.PaginationResponse;
 import com.example.itsec_test.common.exception.BadRequestException;
 import com.example.itsec_test.common.exception.ForbiddenRequestException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+
+import java.util.List;
 import java.util.Optional;
 
 class UserServiceTest {
@@ -43,7 +52,6 @@ class UserServiceTest {
 
         UserResponse response = userService.updateUser(request, user);
 
-        assertNotNull(response);
         assertEquals(request.getFullName(), response.getFullName());
         assertEquals(user.getEmail(), response.getEmail());
         assertEquals(user.getUsername(), response.getUsername());
@@ -75,7 +83,6 @@ class UserServiceTest {
 
         UserResponse response = userService.updateUser(request, superAdmin);
 
-        assertNotNull(response);
         assertEquals(request.getFullName(), response.getFullName());
         assertEquals(request.getRole(), response.getRole());
         verify(userRepository, times(1)).findById(1);
@@ -188,5 +195,70 @@ class UserServiceTest {
         assertThrows(BadRequestException.class,
                 () -> userService.deleteUser(2, user));
         verify(userRepository, times(1)).findById(2);
+    }
+
+    @Test
+    void testGetUserByIdSuccess() {
+        User user = new User();
+        user.setId(1);
+        user.setFullName("Test User");
+        user.setEmail("test@gmail.com");
+        user.setUsername("testuser");
+        user.setRole(UserRole.VIEWER);
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+
+        UserResponse response = userService.getUserById(1);
+
+        assertEquals(user.getId(), response.getId());
+        assertEquals(user.getFullName(), response.getFullName());
+        assertEquals(user.getEmail(), response.getEmail());
+        assertEquals(user.getUsername(), response.getUsername());
+        assertEquals(user.getRole(), response.getRole());
+        verify(userRepository, times(1)).findById(1);
+    }
+
+    @Test
+    void testGetUserByIdNotFound() {
+        when(userRepository.findById(2)).thenReturn(Optional.empty());
+
+        assertThrows(BadRequestException.class,
+                () -> userService.getUserById(2));
+        verify(userRepository, times(1)).findById(2);
+    }
+
+    @SuppressWarnings("null")
+    @Test
+    void testGetUsersPaginated() {
+        User user1 = new User();
+        user1.setId(1);
+        user1.setFullName("User One");
+        user1.setEmail("one@gmail.com");
+        user1.setUsername("userone");
+        user1.setRole(UserRole.EDITOR);
+
+        User user2 = new User();
+        user2.setId(2);
+        user2.setFullName("User Two");
+        user2.setEmail("two@gmail.com");
+        user2.setUsername("usertwo");
+        user2.setRole(UserRole.CONTRIBUTOR);
+
+        List<User> users = List.of(user1, user2);
+        Page<User> page = new PageImpl<>(users);
+
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(page);
+
+        PaginationRequest paginationRequest = PaginationRequest.builder()
+                .page(1)
+                .size(10)
+                .build();
+
+        PaginationResponse<UserResponse> response = userService.getUsers(paginationRequest);
+
+        assertEquals(2, response.getItems().size());
+        assertEquals(user1.getId(), response.getItems().get(0).getId());
+        assertEquals(user2.getId(), response.getItems().get(1).getId());
+        verify(userRepository, times(1)).findAll(any(Pageable.class));
     }
 }

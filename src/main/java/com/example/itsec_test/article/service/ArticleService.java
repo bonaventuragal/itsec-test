@@ -31,17 +31,6 @@ public class ArticleService {
         this.articleRepository = articleRepository;
     }
 
-    public ArticleResponse createArticle(CreateArticleRequest request, User user) {
-        Article article = new Article();
-        article.setTitle(request.getTitle());
-        article.setContent(request.getContent());
-        article.setAuthor(user);
-        article.setPublished(request.isPublished());
-        Article savedArticle = this.articleRepository.save(article);
-
-        return mapToResponse(savedArticle);
-    }
-
     public ArticleResponse getArticleById(@NonNull Integer id, User user) {
         Optional<Article> articleOpt = this.articleRepository.findById(id);
         if (articleOpt.isEmpty()) {
@@ -139,5 +128,16 @@ public class ArticleService {
 
         article.setDeletedAt(LocalDateTime.now());
         this.articleRepository.save(article);
+    }
+
+    public ArticleResponse createArticle(CreateArticleRequest request, User user) {
+        Article article = new Article();
+        article.setTitle(request.getTitle());
+        article.setContent(request.getContent());
+        article.setAuthor(user);
+        article.setPublished(request.isPublished());
+        Article savedArticle = this.articleRepository.save(article);
+
+        return mapToResponse(savedArticle);
     }
 }

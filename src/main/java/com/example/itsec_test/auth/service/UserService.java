@@ -5,9 +5,14 @@ import com.example.itsec_test.auth.dto.UpdateUserRequest;
 import com.example.itsec_test.auth.dto.UserResponse;
 import com.example.itsec_test.auth.model.User;
 import com.example.itsec_test.auth.repository.UserRepository;
+import com.example.itsec_test.common.dto.PaginationRequest;
+import com.example.itsec_test.common.dto.PaginationResponse;
 import com.example.itsec_test.common.exception.BadRequestException;
 import com.example.itsec_test.common.exception.ForbiddenRequestException;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
@@ -41,13 +46,7 @@ public class UserService {
         }
         User updatedUser = this.userRepository.save(userToUpdate);
 
-        return UserResponse.builder()
-                .id(updatedUser.getId())
-                .fullName(updatedUser.getFullName())
-                .email(updatedUser.getEmail())
-                .username(updatedUser.getUsername())
-                .role(updatedUser.getRole())
-                .build();
+        return mapToResponse(updatedUser);
     }
 
     public void deleteUser(@NonNull Integer userId, User requestUser) {
@@ -65,5 +64,41 @@ public class UserService {
 
         userToDelete.setDeletedAt(LocalDateTime.now());
         this.userRepository.save(userToDelete);
+    }
+
+    public UserResponse getUserById(@NonNull Integer id) {
+        Optional<User> userOpt = this.userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            throw new BadRequestException("User not found");
+        }
+        User user = userOpt.get();
+        return mapToResponse(user);
+    }
+
+    public PaginationResponse<UserResponse> getUsers(
+            PaginationRequest paginationRequest) {
+        Pageable pageable = PageRequest.of(
+                Math.max(paginationRequest.getPage() - 1, 0),
+                Math.max(paginationRequest.getSize(), 1));
+
+        Page<User> page = this.userRepository.findAll(pageable);
+
+        return PaginationResponse.<UserResponse>builder()
+                .page(paginationRequest.getPage())
+                .size(paginationRequest.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .items(page.getContent().stream().map(this::mapToResponse).toList())
+                .build();
+    }
+
+    private UserResponse mapToResponse(User user) {
+        return UserResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .role(user.getRole())
+                .build();
     }
 }
