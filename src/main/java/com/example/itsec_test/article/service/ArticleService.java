@@ -5,6 +5,7 @@ import com.example.itsec_test.article.repository.ArticleRepository;
 import com.example.itsec_test.article.dto.ArticleResponse;
 import com.example.itsec_test.article.dto.AuthorResponse;
 import com.example.itsec_test.article.dto.CreateArticleRequest;
+import com.example.itsec_test.article.dto.UpdateArticleRequest;
 import com.example.itsec_test.auth.constant.UserRole;
 import com.example.itsec_test.auth.model.User;
 import com.example.itsec_test.common.exception.BadRequestException;
@@ -56,9 +57,8 @@ public class ArticleService {
 
     public PaginationResponse<ArticleResponse> getArticles(PaginationRequest paginationRequest, User user) {
         Pageable pageable = PageRequest.of(
-            Math.max(paginationRequest.getPage() - 1, 0),
-            Math.max(paginationRequest.getSize(), 1)
-        );
+                Math.max(paginationRequest.getPage() - 1, 0),
+                Math.max(paginationRequest.getSize(), 1));
 
         Page<Article> page;
         if (user.getRole().equals(UserRole.VIEWER)) {
@@ -68,12 +68,12 @@ public class ArticleService {
         }
 
         return PaginationResponse.<ArticleResponse>builder()
-            .page(paginationRequest.getPage())
-            .size(paginationRequest.getSize())
-            .totalElements(page.getTotalElements())
-            .totalPages(page.getTotalPages())
-            .items(page.getContent().stream().map(this::mapToResponse).toList())
-            .build();
+                .page(paginationRequest.getPage())
+                .size(paginationRequest.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .items(page.getContent().stream().map(this::mapToResponse).toList())
+                .build();
     }
 
     private ArticleResponse mapToResponse(Article article) {
@@ -87,5 +87,34 @@ public class ArticleService {
                         .name(article.getAuthor().getFullName())
                         .build())
                 .build();
+    }
+
+    @SuppressWarnings("null")
+    public ArticleResponse updateArticle(UpdateArticleRequest request, User user) {
+        if (user.getRole().equals(UserRole.VIEWER)) {
+            throw new ForbiddenRequestException("You do not have permission to update articles");
+        }
+
+        Optional<Article> articleOpt = articleRepository.findById(request.getId());
+        if (articleOpt.isEmpty()) {
+            throw new BadRequestException("Article not found");
+        }
+
+        Article article = articleOpt.get();
+        User author = article.getAuthor();
+
+        if (!user.getRole().equals(UserRole.SUPER_ADMIN)) {
+            if (author != null && !author.getId().equals(user.getId())
+            ) {
+                throw new ForbiddenRequestException("You do not have permission to update this article");
+            }
+        }
+
+        article.setTitle(request.getTitle());
+        article.setContent(request.getContent());
+        article.setPublished(request.isPublished());
+        Article updatedArticle = articleRepository.save(article);
+
+        return mapToResponse(updatedArticle);
     }
 }

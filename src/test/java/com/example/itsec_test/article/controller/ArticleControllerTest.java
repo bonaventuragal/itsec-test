@@ -4,6 +4,8 @@ import com.example.itsec_test.article.dto.CreateArticleRequest;
 import com.example.itsec_test.article.dto.ArticleResponse;
 import com.example.itsec_test.auth.model.User;
 
+import com.example.itsec_test.article.dto.UpdateArticleRequest;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 import com.example.itsec_test.article.service.ArticleService;
@@ -24,6 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.util.List;
@@ -144,5 +147,44 @@ class ArticleControllerTest {
                 .andExpect(jsonPath("$.items[0].title").value(article1.getTitle()))
                 .andExpect(jsonPath("$.items[1].id").value(article2.getId()))
                 .andExpect(jsonPath("$.items[1].title").value(article2.getTitle()));
+    }
+
+    @Test
+    void testUpdateArticle() throws Exception {
+        User user = new User();
+        user.setId(1);
+        user.setFullName("User Name");
+
+        UpdateArticleRequest request = new UpdateArticleRequest();
+        request.setId(1);
+        request.setTitle("Updated Title");
+        request.setContent("Updated Content");
+        request.setPublished(true);
+
+        ArticleResponse response = ArticleResponse.builder()
+                .id(1)
+                .title("Updated Title")
+                .content("Updated Content")
+                .isPublished(true)
+                .author(null)
+                .build();
+
+        when(articleService.updateArticle(any(UpdateArticleRequest.class), any(User.class))).thenReturn(response);
+
+        String json = "{" +
+                "\"id\":" + request.getId() + "," +
+                "\"title\":\"" + request.getTitle() + "\"," +
+                "\"content\":\"" + request.getContent() + "\"," +
+                "\"published\":true}";
+
+        mockMvc.perform(put("/api/v1/articles")
+                .requestAttr("user", user)
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(response.getId()))
+                .andExpect(jsonPath("$.title").value(response.getTitle()))
+                .andExpect(jsonPath("$.content").value(response.getContent()))
+                .andExpect(jsonPath("$.published").value(response.isPublished()));
     }
 }

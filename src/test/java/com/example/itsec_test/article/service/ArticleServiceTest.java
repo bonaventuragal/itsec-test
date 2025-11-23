@@ -3,6 +3,7 @@ package com.example.itsec_test.article.service;
 import com.example.itsec_test.article.model.Article;
 import com.example.itsec_test.article.repository.ArticleRepository;
 import com.example.itsec_test.article.dto.CreateArticleRequest;
+import com.example.itsec_test.article.dto.UpdateArticleRequest;
 import com.example.itsec_test.article.dto.ArticleResponse;
 import com.example.itsec_test.auth.constant.UserRole;
 import com.example.itsec_test.auth.model.User;
@@ -196,5 +197,103 @@ class ArticleServiceTest {
         assertEquals(1, response.getItems().size());
         assertEquals(true, response.getItems().get(0).isPublished());
         verify(articleRepository, times(1)).findByIsPublished(eq(true), any(Pageable.class));
+    }
+
+    @SuppressWarnings("null")
+    @Test
+    void testUpdateArticleSuccessByAuthor() {
+        User author = new User();
+        author.setId(1);
+        author.setRole(UserRole.CONTRIBUTOR);
+
+        Article article = new Article();
+        article.setId(1);
+        article.setTitle("Old Title");
+        article.setContent("Old Content");
+        article.setAuthor(author);
+        article.setPublished(false);
+
+        UpdateArticleRequest request = new UpdateArticleRequest();
+        request.setId(1);
+        request.setTitle("New Title");
+        request.setContent("New Content");
+        request.setPublished(true);
+
+        when(articleRepository.findById(1)).thenReturn(Optional.of(article));
+        when(articleRepository.save(any(Article.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ArticleResponse response = articleService.updateArticle(request, author);
+
+        assertNotNull(response);
+        assertEquals(request.getTitle(), response.getTitle());
+        assertEquals(request.getContent(), response.getContent());
+        assertTrue(response.isPublished());
+        verify(articleRepository, times(1)).findById(1);
+        verify(articleRepository, times(1)).save(any(Article.class));
+    }
+
+    @Test
+    void testUpdateArticleForbiddenForViewer() {
+        User viewer = new User();
+        viewer.setId(1);
+        viewer.setRole(UserRole.VIEWER);
+
+        UpdateArticleRequest request = new UpdateArticleRequest();
+        request.setId(1);
+        request.setTitle("New Title");
+        request.setContent("New Content");
+        request.setPublished(true);
+
+        assertThrows(ForbiddenRequestException.class,
+                () -> articleService.updateArticle(request, viewer));
+    }
+
+    @Test
+    void testUpdateArticleForbiddenForNonAuthor() {
+        User author = new User();
+        author.setId(1);
+        author.setRole(UserRole.CONTRIBUTOR);
+
+        User otherUser = new User();
+        otherUser.setId(2);
+        otherUser.setRole(UserRole.CONTRIBUTOR);
+
+        Article article = new Article();
+        article.setId(1);
+        article.setTitle("Old Title");
+        article.setContent("Old Content");
+        article.setAuthor(author);
+        article.setPublished(false);
+
+        UpdateArticleRequest request = new UpdateArticleRequest();
+        request.setId(1);
+        request.setTitle("New Title");
+        request.setContent("New Content");
+        request.setPublished(true);
+
+        when(articleRepository.findById(1)).thenReturn(Optional.of(article));
+
+        assertThrows(ForbiddenRequestException.class,
+                () -> articleService.updateArticle(request, otherUser));
+        verify(articleRepository, times(1)).findById(1);
+    }
+
+    @Test
+    void testUpdateArticleNotFound() {
+        User user = new User();
+        user.setId(1);
+        user.setRole(UserRole.SUPER_ADMIN);
+
+        UpdateArticleRequest request = new UpdateArticleRequest();
+        request.setId(99);
+        request.setTitle("Title");
+        request.setContent("Content");
+        request.setPublished(true);
+
+        when(articleRepository.findById(99)).thenReturn(Optional.empty());
+
+        assertThrows(BadRequestException.class,
+                () -> articleService.updateArticle(request, user));
+        verify(articleRepository, times(1)).findById(99);
     }
 }
