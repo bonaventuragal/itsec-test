@@ -1,12 +1,13 @@
 package com.example.itsec_test.auth.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class LoginRequest {
-    @NotBlank
+    @NotNull
     private String usernameOrEmail;
-    @NotBlank
+
+    @NotNull
     private String password;
 }

@@ -1,16 +1,17 @@
 package com.example.itsec_test.article.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class UpdateArticleRequest {
+    @NotNull
     private Integer id;
 
-    @NotBlank
+    @NotNull
     private String title;
 
-    @NotBlank
+    @NotNull
     private String content;
 
     private boolean isPublished = false;

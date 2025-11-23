@@ -103,10 +103,10 @@ class ArticleServiceTest {
         user.setId(1);
         user.setRole(UserRole.EDITOR);
 
-        when(articleRepository.findById(99)).thenReturn(Optional.empty());
+        when(articleRepository.findById(2)).thenReturn(Optional.empty());
 
         assertThrows(BadRequestException.class,
-                () -> articleService.getArticleById(99, user));
+                () -> articleService.getArticleById(2, user));
     }
 
     @Test
@@ -285,16 +285,16 @@ class ArticleServiceTest {
         user.setRole(UserRole.SUPER_ADMIN);
 
         UpdateArticleRequest request = new UpdateArticleRequest();
-        request.setId(99);
+        request.setId(2);
         request.setTitle("Title");
         request.setContent("Content");
         request.setPublished(true);
 
-        when(articleRepository.findById(99)).thenReturn(Optional.empty());
+        when(articleRepository.findById(2)).thenReturn(Optional.empty());
 
         assertThrows(BadRequestException.class,
                 () -> articleService.updateArticle(request, user));
-        verify(articleRepository, times(1)).findById(99);
+        verify(articleRepository, times(1)).findById(2);
     }
 
     @SuppressWarnings("null")
@@ -364,10 +364,10 @@ class ArticleServiceTest {
         user.setId(1);
         user.setRole(UserRole.EDITOR);
 
-        when(articleRepository.findById(99)).thenReturn(Optional.empty());
+        when(articleRepository.findById(2)).thenReturn(Optional.empty());
 
         assertThrows(BadRequestException.class,
-                () -> articleService.deleteArticle(99, user));
-        verify(articleRepository, times(1)).findById(99);
+                () -> articleService.deleteArticle(2, user));
+        verify(articleRepository, times(1)).findById(2);
     }
 }
