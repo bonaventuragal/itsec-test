@@ -18,6 +18,7 @@ import com.example.itsec_test.auth.constant.OtpPurpose;
 import com.example.itsec_test.auth.repository.AuthOtpRepository;
 import com.example.itsec_test.auth.repository.UserRepository;
 import com.example.itsec_test.common.exception.BadRequestException;
+import com.example.itsec_test.common.provider.MailProvider;
 import com.example.itsec_test.auth.repository.AuthTokenRepository;
 import com.example.itsec_test.auth.model.AuthToken;
 
@@ -29,6 +30,7 @@ public class AuthService {
 
     private final AuthTokenRepository authTokenRepository;
     private final TokenProvider tokenProvider;
+    private final MailProvider mailProvider;
 
     private final AuthLockService authLockService;
 
@@ -38,13 +40,15 @@ public class AuthService {
             AuthProvider authProvider,
             AuthTokenRepository authTokenRepository,
             TokenProvider tokenProvider,
-            AuthLockService authLockService) {
+            AuthLockService authLockService,
+            MailProvider mailProvider) {
         this.userRepository = userRepository;
         this.authOtpRepository = authOtpRepository;
         this.authProvider = authProvider;
         this.authTokenRepository = authTokenRepository;
         this.tokenProvider = tokenProvider;
         this.authLockService = authLockService;
+        this.mailProvider = mailProvider;
     }
 
     public void register(RegisterRequest request) {
@@ -74,6 +78,12 @@ public class AuthService {
         authOtp.setExpiresAt(LocalDateTime.now().plusMinutes(10));
 
         this.authOtpRepository.save(authOtp);
+
+        this.mailProvider.sendMail(
+            user.getEmail(),
+            "Verify your account",
+            "Your OTP code is: " + otp
+        );
     }
 
     public void login(LoginRequest request) {
@@ -106,6 +116,12 @@ public class AuthService {
         authOtp.setExpiresAt(LocalDateTime.now().plusMinutes(10));
 
         this.authOtpRepository.save(authOtp);
+
+        this.mailProvider.sendMail(
+            user.getEmail(),
+            "Your Login OTP Code",
+            "Your OTP code is: " + otp
+        );
     }
 
     public String verifyOtp(ValidateOtpRequest request) {

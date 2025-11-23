@@ -4,6 +4,7 @@
 * Java 17
 * PostgreSQL 16
 * Redis
+* Gmail account with app password setup
 
 ## Running the Development Server
 * Clone the repo

@@ -10,9 +10,9 @@ import com.example.itsec_test.common.provider.KeyValueStoreProvider;
 public class AuthLockService {
     private final KeyValueStoreProvider keyValueStoreProvider;
 
-    private final int MAX_LOGIN_FAILS = 5;
-    private final int LOGIN_FAIL_COUNT_EXPIRY_MINUTES = 10;
-    private final int LOGIN_LOCK_DURATION_MINUTES = 30;
+    public final int MAX_LOGIN_FAILS = 5;
+    public final int LOGIN_FAIL_COUNT_EXPIRY_MINUTES = 10;
+    public final int LOGIN_LOCK_DURATION_MINUTES = 30;
 
     public AuthLockService(KeyValueStoreProvider keyValueStoreProvider) {
         this.keyValueStoreProvider = keyValueStoreProvider;

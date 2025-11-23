@@ -14,6 +14,7 @@ import com.example.itsec_test.auth.repository.AuthOtpRepository;
 import com.example.itsec_test.auth.repository.AuthTokenRepository;
 import com.example.itsec_test.auth.repository.UserRepository;
 import com.example.itsec_test.common.exception.BadRequestException;
+import com.example.itsec_test.common.provider.MailProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,299 +26,300 @@ import static org.mockito.Mockito.*;
 
 @SuppressWarnings("null")
 class AuthServiceTest {
-	private UserRepository userRepository;
-	private AuthOtpRepository authOtpRepository;
-	private AuthTokenRepository authTokenRepository;
-	private AuthProvider authProvider;
+    private UserRepository userRepository;
+    private AuthOtpRepository authOtpRepository;
+    private AuthTokenRepository authTokenRepository;
+    private AuthProvider authProvider;
     private TokenProvider tokenProvider;
+    private MailProvider mailProvider;
     private AuthLockService authLockService;
-	private AuthService authService;
+    private AuthService authService;
 
-	@BeforeEach
-	void setUp() {
-		userRepository = mock(UserRepository.class);
-		authOtpRepository = mock(AuthOtpRepository.class);
-		authTokenRepository = mock(AuthTokenRepository.class);
-		authProvider = mock(AuthProvider.class);
-		tokenProvider = mock(TokenProvider.class);
+    @BeforeEach
+    void setUp() {
+        userRepository = mock(UserRepository.class);
+        authOtpRepository = mock(AuthOtpRepository.class);
+        authTokenRepository = mock(AuthTokenRepository.class);
+        authProvider = mock(AuthProvider.class);
+        tokenProvider = mock(TokenProvider.class);
+        mailProvider = mock(MailProvider.class);
         authLockService = mock(AuthLockService.class);
-		authService = new AuthService(
-            userRepository, authOtpRepository, authProvider, authTokenRepository, tokenProvider, authLockService);
-	}
+        authService = new AuthService(
+                userRepository, authOtpRepository, authProvider, authTokenRepository, tokenProvider, authLockService,
+                mailProvider);
+    }
 
     @Test
-	void testRegisterSuccess() {
-		when(userRepository.findByUsernameOrEmail("user1", "user1@gmail.com")).thenReturn(Optional.empty());
-		when(authProvider.encodePassword("password")).thenReturn("hashed");
-    
-		User savedUser = new User();
-		savedUser.setUsername("user1");
-		savedUser.setEmail("user1@gmail.com");
+    void testRegisterSuccess() {
+        when(userRepository.findByUsernameOrEmail("user1", "user1@gmail.com")).thenReturn(Optional.empty());
+        when(authProvider.encodePassword("password")).thenReturn("hashed");
+
+        User savedUser = new User();
+        savedUser.setUsername("user1");
+        savedUser.setEmail("user1@gmail.com");
         savedUser.setFullName("User One");
         savedUser.setRole(UserRole.VIEWER);
-		savedUser.setPassword("hashed");
+        savedUser.setPassword("hashed");
 
-		when(userRepository.save(any(User.class))).thenReturn(savedUser);
+        when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
         RegisterRequest request = new RegisterRequest();
-		request.setUsername("user1");
-		request.setEmail("user1@gmail.com");
-		request.setFullName("User One");
-		request.setRole(UserRole.VIEWER);
-		request.setPassword("password");
+        request.setUsername("user1");
+        request.setEmail("user1@gmail.com");
+        request.setFullName("User One");
+        request.setRole(UserRole.VIEWER);
+        request.setPassword("password");
 
-		authService.register(request);
+        authService.register(request);
 
-		verify(userRepository, times(1)).save(any(User.class));
-		verify(authOtpRepository, times(1)).save(any(AuthOtp.class));
-	}
+        verify(userRepository, times(1)).save(any(User.class));
+        verify(authOtpRepository, times(1)).save(any(AuthOtp.class));
+        verify(mailProvider, times(1)).sendMail(eq("user1@gmail.com"), eq("Verify your account"), contains("Your OTP code is:"));
+    }
 
     @Test
-	void testRegisterDuplicate() {
-		when(userRepository.findByUsernameOrEmail("user1", "user1@gmail.com")).thenReturn(Optional.of(new User()));
+    void testRegisterDuplicate() {
+        when(userRepository.findByUsernameOrEmail("user1", "user1@gmail.com")).thenReturn(Optional.of(new User()));
 
         RegisterRequest request = new RegisterRequest();
-		request.setUsername("user1");
-		request.setEmail("user1@gmail.com");
+        request.setUsername("user1");
+        request.setEmail("user1@gmail.com");
 
-		assertThrows(BadRequestException.class, () -> authService.register(request));
-		verify(userRepository, never()).save(any(User.class));
-		verify(authOtpRepository, never()).save(any(AuthOtp.class));
-	}
+        assertThrows(BadRequestException.class, () -> authService.register(request));
+        verify(userRepository, never()).save(any(User.class));
+        verify(authOtpRepository, never()).save(any(AuthOtp.class));
+    }
 
+    @Test
+    void testLoginSuccess() {
+        User user = new User();
+        user.setUsername("user1");
+        user.setEmail("user1@gmail.com");
+        user.setPassword("hashed");
+        user.setIsVerified(true);
 
-	@Test
-	void testLoginSuccess() {
-		User user = new User();
-		user.setUsername("user1");
-		user.setEmail("user1@gmail.com");
-		user.setPassword("hashed");
-		user.setIsVerified(true);
+        when(authLockService.isAccountLocked("user1")).thenReturn(false);
+        when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
+        when(authProvider.matches("password", "hashed")).thenReturn(true);
 
-		when(authLockService.isAccountLocked("user1")).thenReturn(false);
-		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
-		when(authProvider.matches("password", "hashed")).thenReturn(true);
+        LoginRequest request = new LoginRequest();
+        request.setUsernameOrEmail("user1");
+        request.setPassword("password");
 
-		LoginRequest request = new LoginRequest();
-		request.setUsernameOrEmail("user1");
-		request.setPassword("password");
+        authService.login(request);
 
-		authService.login(request);
+        verify(authOtpRepository, times(1)).save(any(AuthOtp.class));
+        verify(mailProvider, times(1)).sendMail(eq("user1@gmail.com"), eq("Your Login OTP Code"), contains("Your OTP code is:"));
+    }
 
-		verify(authOtpRepository, times(1)).save(any(AuthOtp.class));
-	}
+    @Test
+    void testLoginUserNotFound() {
+        when(authLockService.isAccountLocked("user1")).thenReturn(false);
+        when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.empty());
 
+        LoginRequest request = new LoginRequest();
+        request.setUsernameOrEmail("user1");
+        request.setPassword("password");
 
-	@Test
-	void testLoginUserNotFound() {
-		when(authLockService.isAccountLocked("user1")).thenReturn(false);
-		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.empty());
+        assertThrows(BadRequestException.class, () -> authService.login(request));
+        verify(authOtpRepository, never()).save(any(AuthOtp.class));
+    }
 
-		LoginRequest request = new LoginRequest();
-		request.setUsernameOrEmail("user1");
-		request.setPassword("password");
+    @Test
+    void testLoginInvalidPassword() {
+        User user = new User();
+        user.setPassword("hashed");
+        user.setIsVerified(true);
+        when(authLockService.isAccountLocked("user1")).thenReturn(false);
+        when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
+        when(authProvider.matches("password", "hashed")).thenReturn(false);
 
-		assertThrows(BadRequestException.class, () -> authService.login(request));
-		verify(authOtpRepository, never()).save(any(AuthOtp.class));
-	}
+        LoginRequest request = new LoginRequest();
+        request.setUsernameOrEmail("user1");
+        request.setPassword("password");
 
+        assertThrows(BadRequestException.class, () -> authService.login(request));
+        verify(authOtpRepository, never()).save(any(AuthOtp.class));
+    }
 
-	@Test
-	void testLoginInvalidPassword() {
-		User user = new User();
-		user.setPassword("hashed");
-		user.setIsVerified(true);
-		when(authLockService.isAccountLocked("user1")).thenReturn(false);
-		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
-		when(authProvider.matches("password", "hashed")).thenReturn(false);
+    @Test
+    void testLoginNotVerified() {
+        User user = new User();
+        user.setPassword("hashed");
+        user.setIsVerified(false);
+        when(authLockService.isAccountLocked("user1")).thenReturn(false);
+        when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
+        when(authProvider.matches("password", "hashed")).thenReturn(true);
 
-		LoginRequest request = new LoginRequest();
-		request.setUsernameOrEmail("user1");
-		request.setPassword("password");
+        LoginRequest request = new LoginRequest();
+        request.setUsernameOrEmail("user1");
+        request.setPassword("password");
 
-		assertThrows(BadRequestException.class, () -> authService.login(request));
-		verify(authOtpRepository, never()).save(any(AuthOtp.class));
-	}
+        assertThrows(BadRequestException.class, () -> authService.login(request));
+        verify(authOtpRepository, never()).save(any(AuthOtp.class));
+    }
 
+    @Test
+    void testLoginAccountLocked() {
+        when(authLockService.isAccountLocked("user1")).thenReturn(true);
 
-	@Test
-	void testLoginNotVerified() {
-		User user = new User();
-		user.setPassword("hashed");
-		user.setIsVerified(false);
-		when(authLockService.isAccountLocked("user1")).thenReturn(false);
-		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
-		when(authProvider.matches("password", "hashed")).thenReturn(true);
+        LoginRequest request = new LoginRequest();
+        request.setUsernameOrEmail("user1");
+        request.setPassword("password");
 
-		LoginRequest request = new LoginRequest();
-		request.setUsernameOrEmail("user1");
-		request.setPassword("password");
-        
-		assertThrows(BadRequestException.class, () -> authService.login(request));
-		verify(authOtpRepository, never()).save(any(AuthOtp.class));
-	}
+        assertThrows(BadRequestException.class, () -> authService.login(request));
+        verify(authOtpRepository, never()).save(any(AuthOtp.class));
+    }
 
-	@Test
-	void testLoginAccountLocked() {
-		when(authLockService.isAccountLocked("user1")).thenReturn(true);
+    @Test
+    void testVerifyOtpRegisterSuccess() {
+        User user = new User();
+        user.setId(1);
+        user.setUsername("user1");
+        user.setIsVerified(false);
 
-		LoginRequest request = new LoginRequest();
-		request.setUsernameOrEmail("user1");
-		request.setPassword("password");
+        AuthOtp otp = new AuthOtp();
+        otp.setOtp("123456");
+        otp.setUser(user);
+        otp.setPurpose(OtpPurpose.REGISTER);
+        otp.setExpiresAt(LocalDateTime.now().plusHours(1));
 
-		assertThrows(BadRequestException.class, () -> authService.login(request));
-		verify(authOtpRepository, never()).save(any(AuthOtp.class));
-	}
+        when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
+        when(authOtpRepository.findByOtp("123456")).thenReturn(Optional.of(otp));
 
-	@Test
-	void testVerifyOtpRegisterSuccess() {
-		User user = new User();
-		user.setId(1);
-		user.setUsername("user1");
-		user.setIsVerified(false);
+        ValidateOtpRequest request = new ValidateOtpRequest();
+        request.setUsernameOrEmail("user1");
+        request.setOtp("123456");
 
-		AuthOtp otp = new AuthOtp();
-		otp.setOtp("123456");
-		otp.setUser(user);
-		otp.setPurpose(OtpPurpose.REGISTER);
-		otp.setExpiresAt(LocalDateTime.now().plusHours(1));
-        
-		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
-		when(authOtpRepository.findByOtp("123456")).thenReturn(Optional.of(otp));
+        String result = authService.verifyOtp(request);
+        assertNull(result);
+        verify(userRepository, times(1)).save(user);
+        verify(authOtpRepository, times(1)).save(otp);
+    }
 
-		ValidateOtpRequest request = new ValidateOtpRequest();
-		request.setUsernameOrEmail("user1");
-		request.setOtp("123456");
+    @Test
+    void testVerifyOtpLoginSuccess() {
+        User user = new User();
+        user.setId(1);
+        user.setUsername("user1");
+        user.setIsVerified(true);
 
-		String result = authService.verifyOtp(request);
-		assertNull(result);
-		verify(userRepository, times(1)).save(user);
-		verify(authOtpRepository, times(1)).save(otp);
-	}
+        AuthOtp otp = new AuthOtp();
+        otp.setOtp("123456");
+        otp.setUser(user);
+        otp.setPurpose(OtpPurpose.LOGIN);
+        otp.setExpiresAt(LocalDateTime.now().plusHours(1));
 
-	@Test
-	void testVerifyOtpLoginSuccess() {
-		User user = new User();
-		user.setId(1);
-		user.setUsername("user1");
-		user.setIsVerified(true);
+        when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
+        when(authOtpRepository.findByOtp("123456")).thenReturn(Optional.of(otp));
+        when(tokenProvider.generateToken(user)).thenReturn("jwt-token");
 
-		AuthOtp otp = new AuthOtp();
-		otp.setOtp("123456");
-		otp.setUser(user);
-		otp.setPurpose(OtpPurpose.LOGIN);
-		otp.setExpiresAt(LocalDateTime.now().plusHours(1));
+        ValidateOtpRequest request = new ValidateOtpRequest();
+        request.setUsernameOrEmail("user1");
+        request.setOtp("123456");
 
-		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
-		when(authOtpRepository.findByOtp("123456")).thenReturn(Optional.of(otp));
-		when(tokenProvider.generateToken(user)).thenReturn("jwt-token");
+        String result = authService.verifyOtp(request);
+        assertEquals("jwt-token", result);
+        verify(authTokenRepository, times(1)).save(any(AuthToken.class));
+        verify(authOtpRepository, times(1)).save(otp);
+    }
 
-		ValidateOtpRequest request = new ValidateOtpRequest();
-		request.setUsernameOrEmail("user1");
-		request.setOtp("123456");
+    @Test
+    void testVerifyOtpUserNotFound() {
+        when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.empty());
 
-		String result = authService.verifyOtp(request);
-		assertEquals("jwt-token", result);
-		verify(authTokenRepository, times(1)).save(any(AuthToken.class));
-		verify(authOtpRepository, times(1)).save(otp);
-	}
+        ValidateOtpRequest request = new ValidateOtpRequest();
+        request.setUsernameOrEmail("user1");
+        request.setOtp("123456");
 
-	@Test
-	void testVerifyOtpUserNotFound() {
-		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.empty());
+        assertThrows(BadRequestException.class, () -> authService.verifyOtp(request));
+    }
 
-		ValidateOtpRequest request = new ValidateOtpRequest();
-		request.setUsernameOrEmail("user1");
-		request.setOtp("123456");
+    @Test
+    void testVerifyOtpInvalidOtp() {
+        User user = new User();
+        user.setId(1);
+        user.setUsername("user1");
 
-		assertThrows(BadRequestException.class, () -> authService.verifyOtp(request));
-	}
+        when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
+        when(authOtpRepository.findByOtp("123456")).thenReturn(Optional.empty());
 
-	@Test
-	void testVerifyOtpInvalidOtp() {
-		User user = new User();
-		user.setId(1);
-		user.setUsername("user1");
-        
-		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
-		when(authOtpRepository.findByOtp("123456")).thenReturn(Optional.empty());
+        ValidateOtpRequest request = new ValidateOtpRequest();
+        request.setUsernameOrEmail("user1");
+        request.setOtp("123456");
 
-		ValidateOtpRequest request = new ValidateOtpRequest();
-		request.setUsernameOrEmail("user1");
-		request.setOtp("123456");
+        assertThrows(BadRequestException.class, () -> authService.verifyOtp(request));
+    }
 
-		assertThrows(BadRequestException.class, () -> authService.verifyOtp(request));
-	}
-
-	@Test
-	void testVerifyOtpDoesNotBelongToUser() {
-		User user1 = new User();
-		user1.setId(1);
+    @Test
+    void testVerifyOtpDoesNotBelongToUser() {
+        User user1 = new User();
+        user1.setId(1);
         user1.setUsername("user1");
 
-		User user2 = new User();
-		user2.setId(2);
+        User user2 = new User();
+        user2.setId(2);
         user2.setUsername("user2");
 
-		AuthOtp otp = new AuthOtp();
-		otp.setOtp("123456");
-		otp.setUser(user2);
+        AuthOtp otp = new AuthOtp();
+        otp.setOtp("123456");
+        otp.setUser(user2);
 
-		otp.setPurpose(OtpPurpose.REGISTER);
-		otp.setExpiresAt(LocalDateTime.now().plusHours(1));
-        
-		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user1));
-		when(authOtpRepository.findByOtp("123456")).thenReturn(Optional.of(otp));
+        otp.setPurpose(OtpPurpose.REGISTER);
+        otp.setExpiresAt(LocalDateTime.now().plusHours(1));
 
-		ValidateOtpRequest request = new ValidateOtpRequest();
-		request.setUsernameOrEmail("user1");
-		request.setOtp("123456");
+        when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user1));
+        when(authOtpRepository.findByOtp("123456")).thenReturn(Optional.of(otp));
 
-		assertThrows(BadRequestException.class, () -> authService.verifyOtp(request));
-	}
+        ValidateOtpRequest request = new ValidateOtpRequest();
+        request.setUsernameOrEmail("user1");
+        request.setOtp("123456");
 
-	@Test
-	void testVerifyOtpExpired() {
-		User user = new User();
-		user.setId(1);
-		user.setUsername("user1");
-
-		AuthOtp otp = new AuthOtp();
-		otp.setOtp("123456");
-		otp.setUser(user);
-		otp.setPurpose(OtpPurpose.REGISTER);
-		otp.setExpiresAt(LocalDateTime.now().minusHours(1));
-        
-		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
-		when(authOtpRepository.findByOtp("123456")).thenReturn(Optional.of(otp));
-
-		ValidateOtpRequest request = new ValidateOtpRequest();
-		request.setUsernameOrEmail("user1");
-		request.setOtp("123456");
-
-		assertThrows(BadRequestException.class, () -> authService.verifyOtp(request));
-	}
+        assertThrows(BadRequestException.class, () -> authService.verifyOtp(request));
+    }
 
     @Test
-	void testVerifyOtpAlreadyUsed() {
-		User user = new User();
-		user.setId(1);
-		user.setUsername("user1");
+    void testVerifyOtpExpired() {
+        User user = new User();
+        user.setId(1);
+        user.setUsername("user1");
 
-		AuthOtp otp = new AuthOtp();
-		otp.setOtp("123456");
-		otp.setUser(user);
-		otp.setPurpose(OtpPurpose.REGISTER);
-		otp.setExpiresAt(LocalDateTime.now().plusHours(1));
-		otp.setVerifiedAt(LocalDateTime.now().minusHours(1));
-        
-		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
-		when(authOtpRepository.findByOtp("123456")).thenReturn(Optional.of(otp));
+        AuthOtp otp = new AuthOtp();
+        otp.setOtp("123456");
+        otp.setUser(user);
+        otp.setPurpose(OtpPurpose.REGISTER);
+        otp.setExpiresAt(LocalDateTime.now().minusHours(1));
 
-		ValidateOtpRequest request = new ValidateOtpRequest();
-		request.setUsernameOrEmail("user1");
-		request.setOtp("123456");
+        when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
+        when(authOtpRepository.findByOtp("123456")).thenReturn(Optional.of(otp));
 
-		assertThrows(BadRequestException.class, () -> authService.verifyOtp(request));
-	}
+        ValidateOtpRequest request = new ValidateOtpRequest();
+        request.setUsernameOrEmail("user1");
+        request.setOtp("123456");
+
+        assertThrows(BadRequestException.class, () -> authService.verifyOtp(request));
+    }
+
+    @Test
+    void testVerifyOtpAlreadyUsed() {
+        User user = new User();
+        user.setId(1);
+        user.setUsername("user1");
+
+        AuthOtp otp = new AuthOtp();
+        otp.setOtp("123456");
+        otp.setUser(user);
+        otp.setPurpose(OtpPurpose.REGISTER);
+        otp.setExpiresAt(LocalDateTime.now().plusHours(1));
+        otp.setVerifiedAt(LocalDateTime.now().minusHours(1));
+
+        when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
+        when(authOtpRepository.findByOtp("123456")).thenReturn(Optional.of(otp));
+
+        ValidateOtpRequest request = new ValidateOtpRequest();
+        request.setUsernameOrEmail("user1");
+        request.setOtp("123456");
+
+        assertThrows(BadRequestException.class, () -> authService.verifyOtp(request));
+    }
 }
