@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 
 import com.example.itsec_test.audit.model.AuditLog;
 import com.example.itsec_test.audit.repository.AuditLogRepository;
+import com.example.itsec_test.auth.model.User;
 
 @Component
 public class RequestLoggingFilter extends OncePerRequestFilter {
@@ -34,6 +35,11 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         auditLog.setClientIp(request.getRemoteAddr());
         auditLog.setUserAgent(request.getHeader("User-Agent"));
         auditLog.setTimestamp(LocalDateTime.now());
+
+        Object userObj = request.getAttribute("user");
+        if (userObj instanceof User user) {
+            auditLog.setUser(user);
+        }
 
         auditLogRepository.save(auditLog);
 
