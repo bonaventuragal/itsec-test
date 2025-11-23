@@ -17,8 +17,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -63,6 +65,31 @@ class ArticleControllerTest {
                 .requestAttr("user", user)
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(response.getId()))
+                .andExpect(jsonPath("$.title").value(response.getTitle()))
+                .andExpect(jsonPath("$.content").value(response.getContent()))
+                .andExpect(jsonPath("$.published").value(response.isPublished()));
+    }
+
+    @Test
+    void testGetArticleById() throws Exception {
+        User user = new User();
+        user.setId(1);
+        user.setFullName("Viewer Name");
+
+        ArticleResponse response = ArticleResponse.builder()
+                .id(2)
+                .title("Test Title")
+                .content("Test Content")
+                .isPublished(true)
+                .author(null)
+                .build();
+
+        when(articleService.getArticleById(eq(1), any(User.class))).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/articles/1")
+                .requestAttr("user", user))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(response.getId()))
                 .andExpect(jsonPath("$.title").value(response.getTitle()))
