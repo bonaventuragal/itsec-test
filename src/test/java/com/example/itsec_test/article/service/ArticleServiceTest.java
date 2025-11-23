@@ -8,6 +8,11 @@ import com.example.itsec_test.auth.constant.UserRole;
 import com.example.itsec_test.auth.model.User;
 import com.example.itsec_test.common.exception.BadRequestException;
 import com.example.itsec_test.common.exception.ForbiddenRequestException;
+import com.example.itsec_test.common.dto.PaginationRequest;
+import com.example.itsec_test.common.dto.PaginationResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import java.util.List;
 import java.util.Optional;
 
 class ArticleServiceTest {
@@ -115,9 +121,80 @@ class ArticleServiceTest {
         article.setAuthor(user);
         article.setPublished(false);
 
-        when(articleRepository.findById(1)).thenReturn(java.util.Optional.of(article));
+        when(articleRepository.findById(1)).thenReturn(Optional.of(article));
 
         assertThrows(ForbiddenRequestException.class,
                 () -> articleService.getArticleById(1, user));
+    }
+
+    @SuppressWarnings("null")
+    @Test
+    void testGetAllArticles() {
+        User user = new User();
+        user.setId(1);
+        user.setRole(UserRole.EDITOR);
+
+        Article publishedArticle = new Article();
+        publishedArticle.setId(1);
+        publishedArticle.setTitle("Published");
+        publishedArticle.setContent("Content");
+        publishedArticle.setAuthor(user);
+        publishedArticle.setPublished(true);
+
+        Article unpublishedArticle = new Article();
+        unpublishedArticle.setId(2);
+        unpublishedArticle.setTitle("Unpublished");
+        unpublishedArticle.setContent("Content");
+        unpublishedArticle.setAuthor(user);
+        unpublishedArticle.setPublished(false);
+
+        Page<Article> page = new PageImpl<>(List.of(publishedArticle, unpublishedArticle));
+        when(articleRepository.findAll(any(Pageable.class))).thenReturn(page);
+
+        PaginationRequest paginationRequest = PaginationRequest.builder()
+                .page(1)
+                .size(10)
+                .build();
+        PaginationResponse<ArticleResponse> response = articleService.getArticles(paginationRequest, user);
+
+        assertNotNull(response);
+        assertEquals(2, response.getItems().size());
+        verify(articleRepository, times(1)).findAll(any(Pageable.class));
+    }
+
+    @SuppressWarnings("null")
+    @Test
+    void testGetArticlesViewerOnlyPublished() {
+        User user = new User();
+        user.setId(1);
+        user.setRole(UserRole.VIEWER);
+
+        Article publishedArticle = new Article();
+        publishedArticle.setId(1);
+        publishedArticle.setTitle("Published");
+        publishedArticle.setContent("Content");
+        publishedArticle.setAuthor(user);
+        publishedArticle.setPublished(true);
+
+        Article unpublishedArticle = new Article();
+        unpublishedArticle.setId(2);
+        unpublishedArticle.setTitle("Unpublished");
+        unpublishedArticle.setContent("Content");
+        unpublishedArticle.setAuthor(user);
+        unpublishedArticle.setPublished(false);
+
+        Page<Article> page = new PageImpl<>(List.of(publishedArticle));
+        when(articleRepository.findByIsPublished(eq(true), any(Pageable.class))).thenReturn(page);
+
+        PaginationRequest paginationRequest = PaginationRequest.builder()
+                .page(1)
+                .size(10)
+                .build();
+        PaginationResponse<ArticleResponse> response = articleService.getArticles(paginationRequest, user);
+
+        assertNotNull(response);
+        assertEquals(1, response.getItems().size());
+        assertEquals(true, response.getItems().get(0).isPublished());
+        verify(articleRepository, times(1)).findByIsPublished(eq(true), any(Pageable.class));
     }
 }

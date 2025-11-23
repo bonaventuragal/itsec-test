@@ -9,6 +9,12 @@ import com.example.itsec_test.auth.constant.UserRole;
 import com.example.itsec_test.auth.model.User;
 import com.example.itsec_test.common.exception.BadRequestException;
 import com.example.itsec_test.common.exception.ForbiddenRequestException;
+import com.example.itsec_test.common.dto.PaginationRequest;
+import com.example.itsec_test.common.dto.PaginationResponse;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Optional;
 
@@ -48,6 +54,28 @@ public class ArticleService {
         return mapToResponse(article);
     }
 
+    public PaginationResponse<ArticleResponse> getArticles(PaginationRequest paginationRequest, User user) {
+        Pageable pageable = PageRequest.of(
+            Math.max(paginationRequest.getPage() - 1, 0),
+            Math.max(paginationRequest.getSize(), 1)
+        );
+
+        Page<Article> page;
+        if (user.getRole().equals(UserRole.VIEWER)) {
+            page = articleRepository.findByIsPublished(true, pageable);
+        } else {
+            page = articleRepository.findAll(pageable);
+        }
+
+        return PaginationResponse.<ArticleResponse>builder()
+            .page(paginationRequest.getPage())
+            .size(paginationRequest.getSize())
+            .totalElements(page.getTotalElements())
+            .totalPages(page.getTotalPages())
+            .items(page.getContent().stream().map(this::mapToResponse).toList())
+            .build();
+    }
+
     private ArticleResponse mapToResponse(Article article) {
         return ArticleResponse.builder()
                 .id(article.getId())
@@ -60,5 +88,4 @@ public class ArticleService {
                         .build())
                 .build();
     }
-
 }
