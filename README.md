@@ -39,6 +39,9 @@ MAIL_PASSWORD=email_app_password
 ```
 > The email is used to send OTP. App Password can be generated on https://myaccount.google.com/apppasswords
 * Run `docker-compose up -d`
+  * The application will run on port `8080`
+  * PostgreSQL instance will run on port `5433`
+  * Redis instance will run on port `6379`
 
 > The image for this app is available on https://hub.docker.com/r/bonaventuragal/itsec-test
 
