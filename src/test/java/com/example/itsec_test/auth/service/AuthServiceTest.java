@@ -45,12 +45,12 @@ class AuthServiceTest {
 	@SuppressWarnings("null")
     @Test
 	void testRegisterSuccess() {
-		when(userRepository.findByUsernameOrEmail("user1", "user1@example.com")).thenReturn(Optional.empty());
+		when(userRepository.findByUsernameOrEmail("user1", "user1@gmail.com")).thenReturn(Optional.empty());
 		when(authProvider.encodePassword("password")).thenReturn("hashed");
     
 		User savedUser = new User();
 		savedUser.setUsername("user1");
-		savedUser.setEmail("user1@example.com");
+		savedUser.setEmail("user1@gmail.com");
         savedUser.setFullName("User One");
         savedUser.setRole(UserRole.VIEWER);
 		savedUser.setPassword("hashed");
@@ -59,7 +59,7 @@ class AuthServiceTest {
 
         RegisterRequest request = new RegisterRequest();
 		request.setUsername("user1");
-		request.setEmail("user1@example.com");
+		request.setEmail("user1@gmail.com");
 		request.setFullName("User One");
 		request.setRole(UserRole.VIEWER);
 		request.setPassword("password");
@@ -73,11 +73,11 @@ class AuthServiceTest {
 	@SuppressWarnings("null")
     @Test
 	void testRegisterDuplicate() {
-		when(userRepository.findByUsernameOrEmail("user1", "user1@example.com")).thenReturn(Optional.of(new User()));
+		when(userRepository.findByUsernameOrEmail("user1", "user1@gmail.com")).thenReturn(Optional.of(new User()));
 
         RegisterRequest request = new RegisterRequest();
 		request.setUsername("user1");
-		request.setEmail("user1@example.com");
+		request.setEmail("user1@gmail.com");
 
 		assertThrows(BadRequestException.class, () -> authService.register(request));
 		verify(userRepository, never()).save(any(User.class));
@@ -89,7 +89,7 @@ class AuthServiceTest {
 	void testLoginSuccess() {
 		User user = new User();
 		user.setUsername("user1");
-		user.setEmail("user1@example.com");
+		user.setEmail("user1@gmail.com");
 		user.setPassword("hashed");
 		user.setIsVerified(true);
 

@@ -7,7 +7,11 @@ import com.example.itsec_test.auth.model.User;
 import com.example.itsec_test.auth.repository.UserRepository;
 import com.example.itsec_test.common.exception.BadRequestException;
 import com.example.itsec_test.common.exception.ForbiddenRequestException;
+
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -20,7 +24,7 @@ public class UserService {
 
     @SuppressWarnings("null")
     public UserResponse updateUser(UpdateUserRequest request, User user) {
-        Optional<User> userOpt = userRepository.findById(request.getId());
+        Optional<User> userOpt = this.userRepository.findById(request.getId());
         if (userOpt.isEmpty()) {
             throw new BadRequestException("User not found");
         }
@@ -35,7 +39,7 @@ public class UserService {
         if (user.getRole().equals(UserRole.SUPER_ADMIN) && request.getRole() != null) {
             userToUpdate.setRole(request.getRole());
         }
-        User updatedUser = userRepository.save(userToUpdate);
+        User updatedUser = this.userRepository.save(userToUpdate);
 
         return UserResponse.builder()
                 .id(updatedUser.getId())
@@ -44,5 +48,22 @@ public class UserService {
                 .username(updatedUser.getUsername())
                 .role(updatedUser.getRole())
                 .build();
+    }
+
+    public void deleteUser(@NonNull Integer userId, User requestUser) {
+        Optional<User> userOpt = this.userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            throw new BadRequestException("User not found");
+        }
+        User userToDelete = userOpt.get();
+
+        if (!requestUser.getRole().equals(UserRole.SUPER_ADMIN)) {
+            if (!userToDelete.getId().equals(requestUser.getId())) {
+                throw new ForbiddenRequestException("You do not have permission to delete this user");
+            }
+        }
+
+        userToDelete.setDeletedAt(LocalDateTime.now());
+        this.userRepository.save(userToDelete);
     }
 }

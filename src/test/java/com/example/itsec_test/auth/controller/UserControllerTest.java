@@ -42,7 +42,7 @@ class UserControllerTest {
         User user = new User();
         user.setId(1);
         user.setFullName("User Name");
-        user.setEmail("user@example.com");
+        user.setEmail("user@gmail.com");
         user.setUsername("user1");
 
         UpdateUserRequest request = new UpdateUserRequest();
@@ -53,7 +53,7 @@ class UserControllerTest {
         UserResponse response = UserResponse.builder()
                 .id(1)
                 .fullName("Updated Name")
-                .email("user@example.com")
+                .email("user@gmail.com")
                 .username("user1")
                 .role(null)
                 .build();
@@ -74,5 +74,21 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.fullName").value(response.getFullName()))
                 .andExpect(jsonPath("$.email").value(response.getEmail()))
                 .andExpect(jsonPath("$.username").value(response.getUsername()));
+    }
+
+    @Test
+    void testDeleteUser() throws Exception {
+        User user = new User();
+        user.setId(1);
+        user.setFullName("User Name");
+        user.setEmail("user@gmail.com");
+        user.setUsername("user1");
+
+        doNothing().when(userService).deleteUser(eq(1), any(User.class));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/users/1")
+                .requestAttr("user", user))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("User deleted successfully"));
     }
 }
