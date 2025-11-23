@@ -23,12 +23,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("null")
 class AuthServiceTest {
 	private UserRepository userRepository;
 	private AuthOtpRepository authOtpRepository;
 	private AuthTokenRepository authTokenRepository;
 	private AuthProvider authProvider;
     private TokenProvider tokenProvider;
+    private AuthLockService authLockService;
 	private AuthService authService;
 
 	@BeforeEach
@@ -38,11 +40,11 @@ class AuthServiceTest {
 		authTokenRepository = mock(AuthTokenRepository.class);
 		authProvider = mock(AuthProvider.class);
 		tokenProvider = mock(TokenProvider.class);
+        authLockService = mock(AuthLockService.class);
 		authService = new AuthService(
-            userRepository, authOtpRepository, authProvider, authTokenRepository, tokenProvider);
+            userRepository, authOtpRepository, authProvider, authTokenRepository, tokenProvider, authLockService);
 	}
 
-	@SuppressWarnings("null")
     @Test
 	void testRegisterSuccess() {
 		when(userRepository.findByUsernameOrEmail("user1", "user1@gmail.com")).thenReturn(Optional.empty());
@@ -70,7 +72,6 @@ class AuthServiceTest {
 		verify(authOtpRepository, times(1)).save(any(AuthOtp.class));
 	}
 
-	@SuppressWarnings("null")
     @Test
 	void testRegisterDuplicate() {
 		when(userRepository.findByUsernameOrEmail("user1", "user1@gmail.com")).thenReturn(Optional.of(new User()));
@@ -84,8 +85,8 @@ class AuthServiceTest {
 		verify(authOtpRepository, never()).save(any(AuthOtp.class));
 	}
 
-	@SuppressWarnings("null")
-    @Test
+
+	@Test
 	void testLoginSuccess() {
 		User user = new User();
 		user.setUsername("user1");
@@ -93,61 +94,77 @@ class AuthServiceTest {
 		user.setPassword("hashed");
 		user.setIsVerified(true);
 
+		when(authLockService.isAccountLocked("user1")).thenReturn(false);
 		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
 		when(authProvider.matches("password", "hashed")).thenReturn(true);
 
-        LoginRequest request = new LoginRequest();
-        request.setUsernameOrEmail("user1");
-        request.setPassword("password");
+		LoginRequest request = new LoginRequest();
+		request.setUsernameOrEmail("user1");
+		request.setPassword("password");
 
 		authService.login(request);
 
 		verify(authOtpRepository, times(1)).save(any(AuthOtp.class));
 	}
 
-	@SuppressWarnings("null")
-    @Test
+
+	@Test
 	void testLoginUserNotFound() {
+		when(authLockService.isAccountLocked("user1")).thenReturn(false);
 		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.empty());
 
-        LoginRequest request = new LoginRequest();
-        request.setUsernameOrEmail("user1");
-        request.setPassword("password");
+		LoginRequest request = new LoginRequest();
+		request.setUsernameOrEmail("user1");
+		request.setPassword("password");
 
 		assertThrows(BadRequestException.class, () -> authService.login(request));
 		verify(authOtpRepository, never()).save(any(AuthOtp.class));
 	}
 
-	@SuppressWarnings("null")
-    @Test
+
+	@Test
 	void testLoginInvalidPassword() {
 		User user = new User();
 		user.setPassword("hashed");
 		user.setIsVerified(true);
+		when(authLockService.isAccountLocked("user1")).thenReturn(false);
 		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
 		when(authProvider.matches("password", "hashed")).thenReturn(false);
 
-        LoginRequest request = new LoginRequest();
-        request.setUsernameOrEmail("user1");
-        request.setPassword("password");
+		LoginRequest request = new LoginRequest();
+		request.setUsernameOrEmail("user1");
+		request.setPassword("password");
 
 		assertThrows(BadRequestException.class, () -> authService.login(request));
 		verify(authOtpRepository, never()).save(any(AuthOtp.class));
 	}
 
-	@SuppressWarnings("null")
-    @Test
+
+	@Test
 	void testLoginNotVerified() {
 		User user = new User();
 		user.setPassword("hashed");
 		user.setIsVerified(false);
+		when(authLockService.isAccountLocked("user1")).thenReturn(false);
 		when(userRepository.findByUsernameOrEmail("user1", "user1")).thenReturn(Optional.of(user));
 		when(authProvider.matches("password", "hashed")).thenReturn(true);
 
-        LoginRequest request = new LoginRequest();
-        request.setUsernameOrEmail("user1");
-        request.setPassword("password");
+		LoginRequest request = new LoginRequest();
+		request.setUsernameOrEmail("user1");
+		request.setPassword("password");
         
+		assertThrows(BadRequestException.class, () -> authService.login(request));
+		verify(authOtpRepository, never()).save(any(AuthOtp.class));
+	}
+
+	@Test
+	void testLoginAccountLocked() {
+		when(authLockService.isAccountLocked("user1")).thenReturn(true);
+
+		LoginRequest request = new LoginRequest();
+		request.setUsernameOrEmail("user1");
+		request.setPassword("password");
+
 		assertThrows(BadRequestException.class, () -> authService.login(request));
 		verify(authOtpRepository, never()).save(any(AuthOtp.class));
 	}
@@ -178,7 +195,6 @@ class AuthServiceTest {
 		verify(authOtpRepository, times(1)).save(otp);
 	}
 
-	@SuppressWarnings("null")
 	@Test
 	void testVerifyOtpLoginSuccess() {
 		User user = new User();

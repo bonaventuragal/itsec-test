@@ -3,6 +3,7 @@
 ## Prerequisites
 * Java 17
 * PostgreSQL 16
+* Redis
 
 ## Running the Development Server
 * Clone the repo

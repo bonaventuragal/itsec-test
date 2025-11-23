@@ -18,7 +18,6 @@ import com.example.itsec_test.auth.constant.OtpPurpose;
 import com.example.itsec_test.auth.repository.AuthOtpRepository;
 import com.example.itsec_test.auth.repository.UserRepository;
 import com.example.itsec_test.common.exception.BadRequestException;
-
 import com.example.itsec_test.auth.repository.AuthTokenRepository;
 import com.example.itsec_test.auth.model.AuthToken;
 
@@ -31,17 +30,21 @@ public class AuthService {
     private final AuthTokenRepository authTokenRepository;
     private final TokenProvider tokenProvider;
 
+    private final AuthLockService authLockService;
+
     public AuthService(
             UserRepository userRepository,
             AuthOtpRepository authOtpRepository,
             AuthProvider authProvider,
             AuthTokenRepository authTokenRepository,
-            TokenProvider tokenProvider) {
+            TokenProvider tokenProvider,
+            AuthLockService authLockService) {
         this.userRepository = userRepository;
         this.authOtpRepository = authOtpRepository;
         this.authProvider = authProvider;
         this.authTokenRepository = authTokenRepository;
         this.tokenProvider = tokenProvider;
+        this.authLockService = authLockService;
     }
 
     public void register(RegisterRequest request) {
@@ -74,6 +77,10 @@ public class AuthService {
     }
 
     public void login(LoginRequest request) {
+        if (this.authLockService.isAccountLocked(request.getUsernameOrEmail())) {
+            throw new BadRequestException("Account is locked due to too many failed login attempts. Please try again later.");
+        }
+
         Optional<User> userOpt = this.userRepository.findByUsernameOrEmail(
             request.getUsernameOrEmail(), request.getUsernameOrEmail());
         if (userOpt.isEmpty()) {
@@ -81,7 +88,8 @@ public class AuthService {
         }
 
         User user = userOpt.get();
-        if (!authProvider.matches(request.getPassword(), user.getPassword())) {
+        if (!this.authProvider.matches(request.getPassword(), user.getPassword())) {
+            this.authLockService.onLoginFailure(request.getUsernameOrEmail());
             throw new BadRequestException("Invalid password");
         }
 
@@ -148,5 +156,4 @@ public class AuthService {
         int otpInt = 100000 + random.nextInt(900000);
         return String.valueOf(otpInt);
     }
-
 }
